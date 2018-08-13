@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.dmitriyl.servicetest">
 
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
@@ -20,7 +22,7 @@
                 <action android:name="android.intent.action.SCREEN_ON"/>
             </intent-filter>
         </receiver>
-        <service android:name=".AndroidStartServiceOnBoot" ></service>
+        <service android:name=".AndroidStartServiceOnBoot" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
