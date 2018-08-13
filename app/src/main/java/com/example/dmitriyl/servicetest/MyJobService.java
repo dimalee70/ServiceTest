@@ -7,7 +7,8 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
+import android.app.job.JobParameters;
+import android.app.job.JobService;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -17,16 +18,22 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.view.View;
 
-public class AndroidStartServiceOnBoot extends Service implements LocationListener {
-    private Context mContext;
+public class MyJobService extends JobService implements LocationListener
+{
+    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 10; // 10 meters
+
+    // The minimum time between updates in milliseconds
+    private static final long MIN_TIME_BW_UPDATES = 1000 * 60 * 1;
+
+    protected LocationManager locationManager;
+
     NotificationManager nm;
 
     // flag for GPS status
@@ -41,103 +48,14 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
     Location location; // location
     double latitude; // latitude
     double longitude; // longitude
+    boolean isWorking = false;
+    boolean jobCancelled = false;
+    private Context mContext;
 
-    // The minimum distance to change Updates in meters
-    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 10; // 10 meters
-
-    // The minimum time between updates in milliseconds
-    private static final long MIN_TIME_BW_UPDATES = 1000 * 60 * 1; // 1 minute
-
-    // Declaring a Location Manager
-    protected LocationManager locationManager;
-
-    public AndroidStartServiceOnBoot() {
-
-    }
-//    private Context mContex;
-//
-//    public AndroidStartServiceOnBoot(Context mContex) {
-//        this.mContex = mContex;
-//    }
-//
-//    public Location getLocation() {
-//        try {
-//            System.out.println("Start get loc");
-//            locationManager = (LocationManager)this.getSystemService(LOCATION_SERVICE);
-//            if (ActivityCompat.checkSelfPermission(mContex, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                System.out.println("inside check permission");
-//                ActivityCompat.requestPermissions((Activity) mContex,   new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
-//            }
-//            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//            System.out.println(location.getLatitude());
-////                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-////            System.out.println("Latitude " +locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER).getLatitude());
-////            System.out.println("Longitude " + locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER).getLongitude());
-//        }catch (Exception e)
-//        {
-//            e.printStackTrace();
-//        }
-//        return location;
-//    }
-
-//    public AndroidStartServiceOnBoot()
-//    {
-//
-//        mContex = null;
-//    }
-
-//    @Override
-//    public void onStart(Intent intent, int startId) {
-//        super.onStart(intent, startId);
-//        Intent dialogIntent = new Intent(this, MainActivity.class);
-//        dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//        startActivity(dialogIntent);
-//    }
-
-    protected void sendNotification(String Longitude, String Latitude) {
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(mContext.getApplicationContext(), "notify_001");
-        Intent ii = new Intent(mContext.getApplicationContext(), MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, ii, 0);
-
-        NotificationCompat.BigTextStyle bigText = new NotificationCompat.BigTextStyle();
-        bigText.setBigContentTitle("Your location");
-        bigText.setSummaryText("You");
-
-        mBuilder.setContentIntent(pendingIntent);
-        mBuilder.setSmallIcon(R.mipmap.ic_launcher_round);
-        mBuilder.setContentTitle("Your location");
-        mBuilder.setContentText("Longitude " + Longitude+"\nLatitude " + Latitude);
-        mBuilder.setPriority(Notification.PRIORITY_MAX);
-        mBuilder.setStyle(bigText);
-
-        NotificationManager mNotificationManager =
-                (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
-
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("notify_001",
-                    "Channel human readable title",
-                    NotificationManager.IMPORTANCE_DEFAULT);
-            mNotificationManager.createNotificationChannel(channel);
-        }
-
-        mNotificationManager.notify(0, mBuilder.build());
-
-//        NotificationCompat.Builder builder =
-//                new NotificationCompat.Builder(mContext)
-//                        .setSmallIcon(android.R.drawable.ic_dialog_info)
-//                        .setContentTitle("A Notification")
-//                        .setContentText("This is an example notification");
-//        int notificationId = 101;
-//        NotificationManager notifyMgr =
-//                (NotificationManager)
-//                        mContext.getSystemService(NOTIFICATION_SERVICE);
-//
-//        notifyMgr.notify(notificationId, builder.build());
-    }
     @Override
-    public void onCreate() {
+    public void onCreate()
+    {
+        System.out.println("onCreateMethod");
         super.onCreate();
         this.mContext = getApplicationContext();
 
@@ -148,19 +66,17 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
     }
 
     @Override
-    public IBinder onBind(Intent intent) {
-        return null;
+    public boolean onStartJob(JobParameters jobParameters)
+    {
+        System.out.println("Job Started");
+        startWorkOnNewThread(jobParameters);
+        isWorking = true;
+        return isWorking;
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        System.out.println("Start Server");
-        System.out.print("Longitude ");
-        getLocation();
-        System.out.println("End Server");
-//
-        sendNotification(Double.toString(longitude),Double.toString(latitude));
-        return START_REDELIVER_INTENT ;
+    public boolean onStopJob(JobParameters jobParameters) {
+        return false;
     }
 
     @Override
@@ -182,7 +98,6 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
     public void onProviderDisabled(String s) {
 
     }
-
     public Location getLocation() {
         try {
             locationManager = (LocationManager) mContext.getSystemService(LOCATION_SERVICE);
@@ -257,7 +172,7 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
     }
     public void stopUsingGPS(){
         if(locationManager != null){
-            locationManager.removeUpdates(AndroidStartServiceOnBoot.this);
+            locationManager.removeUpdates(MyJobService.this);
         }
     }
     public double getLatitude(){
@@ -313,16 +228,65 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
         // Showing Alert Message
         alertDialog.show();
     }
-//    void sendNotif() {
-//        // 1-я часть
-//        Notification notif = new Notification(R.drawable.ic_launcher_background, "Text in status bar",
-//                System.currentTimeMillis());
-//
-//        // ставим флаг, чтобы уведомление пропало после нажатия
-//        notif.flags |= Notification.FLAG_AUTO_CANCEL;
-//
-//        // отправляем
-//        nm.notify(1, notif);
-//    }
+    protected void sendNotification(String Longitude, String Latitude) {
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(mContext.getApplicationContext(), "notify_001");
+        Intent ii = new Intent(mContext.getApplicationContext(), MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, ii, 0);
 
+        NotificationCompat.BigTextStyle bigText = new NotificationCompat.BigTextStyle();
+        bigText.setBigContentTitle("Your location");
+        bigText.setSummaryText("You");
+
+        mBuilder.setContentIntent(pendingIntent);
+        mBuilder.setSmallIcon(R.mipmap.ic_launcher_round);
+        mBuilder.setContentTitle("Your location");
+        mBuilder.setContentText("Longitude " + Longitude + "\nLatitude " + Latitude);
+        mBuilder.setPriority(Notification.PRIORITY_MAX);
+        mBuilder.setStyle(bigText);
+
+        NotificationManager mNotificationManager =
+                (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel("notify_001",
+                    "Channel human readable title",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            mNotificationManager.createNotificationChannel(channel);
+        }
+
+        mNotificationManager.notify(0, mBuilder.build());
+
+//        NotificationCompat.Builder builder =
+//                new NotificationCompat.Builder(mContext)
+//                        .setSmallIcon(android.R.drawable.ic_dialog_info)
+//                        .setContentTitle("A Notification")
+//                        .setContentText("This is an example notification");
+//        int notificationId = 101;
+//        NotificationManager notifyMgr =
+//                (NotificationManager)
+//                        mContext.getSystemService(NOTIFICATION_SERVICE);
+//
+//        notifyMgr.notify(notificationId, builder.build());
+    }
+        private void startWorkOnNewThread(final JobParameters jobParameters)
+        {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    doWork(jobParameters);
+                }
+            }).start();
+        }
+
+    private void doWork(JobParameters jobParameters)
+    {
+        System.out.println("Start Server");
+        System.out.print("Longitude ");
+        getLocation();
+        System.out.println("End Server");
+//
+        sendNotification(Double.toString(longitude),Double.toString(latitude));
+    }
 }

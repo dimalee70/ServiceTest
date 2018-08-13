@@ -1,7 +1,6 @@
-package com.example.dmitriyl.servicetest;
+package com.example.dmitriyl.servicetest.service;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -23,10 +22,24 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.view.View;
 
-public class AndroidStartServiceOnBoot extends Service implements LocationListener {
+import com.example.dmitriyl.servicetest.AndroidStartServiceOnBoot;
+import com.example.dmitriyl.servicetest.MainActivity;
+import com.example.dmitriyl.servicetest.R;
+
+import java.sql.Time;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class GPSService extends Service implements LocationListener
+{
+    private Timer timer;
+
+    public int counter = 0;
+    private TimerTask timerTask;
+    long oldTime=0;
     private Context mContext;
+
     NotificationManager nm;
 
     // flag for GPS status
@@ -51,48 +64,16 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
     // Declaring a Location Manager
     protected LocationManager locationManager;
 
-    public AndroidStartServiceOnBoot() {
+    public GPSService()
+    {
+//        this.mContext = getApplicationContext();
+    }
+    public GPSService(Context mContext)
+    {
+        super();
+        this.mContext = mContext;
 
     }
-//    private Context mContex;
-//
-//    public AndroidStartServiceOnBoot(Context mContex) {
-//        this.mContex = mContex;
-//    }
-//
-//    public Location getLocation() {
-//        try {
-//            System.out.println("Start get loc");
-//            locationManager = (LocationManager)this.getSystemService(LOCATION_SERVICE);
-//            if (ActivityCompat.checkSelfPermission(mContex, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                System.out.println("inside check permission");
-//                ActivityCompat.requestPermissions((Activity) mContex,   new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
-//            }
-//            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//            System.out.println(location.getLatitude());
-////                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-////            System.out.println("Latitude " +locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER).getLatitude());
-////            System.out.println("Longitude " + locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER).getLongitude());
-//        }catch (Exception e)
-//        {
-//            e.printStackTrace();
-//        }
-//        return location;
-//    }
-
-//    public AndroidStartServiceOnBoot()
-//    {
-//
-//        mContex = null;
-//    }
-
-//    @Override
-//    public void onStart(Intent intent, int startId) {
-//        super.onStart(intent, startId);
-//        Intent dialogIntent = new Intent(this, MainActivity.class);
-//        dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//        startActivity(dialogIntent);
-//    }
 
     protected void sendNotification(String Longitude, String Latitude) {
         NotificationCompat.Builder mBuilder =
@@ -124,26 +105,23 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
 
         mNotificationManager.notify(0, mBuilder.build());
 
-//        NotificationCompat.Builder builder =
-//                new NotificationCompat.Builder(mContext)
-//                        .setSmallIcon(android.R.drawable.ic_dialog_info)
-//                        .setContentTitle("A Notification")
-//                        .setContentText("This is an example notification");
-//        int notificationId = 101;
-//        NotificationManager notifyMgr =
-//                (NotificationManager)
-//                        mContext.getSystemService(NOTIFICATION_SERVICE);
-//
-//        notifyMgr.notify(notificationId, builder.build());
+
     }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Intent restartIntent = new Intent("com.example.dmitriyl.servicetest.RestartService");
+        sendBroadcast(restartIntent);
+        stoptimertask();
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
         this.mContext = getApplicationContext();
 
-//        getLocation();
 
-//        if(checkCallingOrSelfPermission(BootCompleted),)BootCompleted
         System.out.println("hello");
     }
 
@@ -154,13 +132,42 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
         System.out.println("Start Server");
         System.out.print("Longitude ");
         getLocation();
+        sendNotification(Double.toString(longitude),Double.toString(latitude));
+        startTimer();
         System.out.println("End Server");
 //
-        sendNotification(Double.toString(longitude),Double.toString(latitude));
-        return START_REDELIVER_INTENT ;
+
+        return START_STICKY;
+    }
+
+
+    private void startTimer()
+    {
+        timer = new Timer();
+        initializeTimerTask();
+
+        timer.schedule(timerTask, 100000, 10000);
+    }
+
+    public void stoptimertask() {
+        //stop the timer, if it's not already null
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+    }
+    private void initializeTimerTask()
+    {
+        timerTask = new TimerTask() {
+            public void run() {
+
+//                Log.i("in timer", "in timer ++++  "+ (counter++));
+            }
+        };
     }
 
     @Override
@@ -187,27 +194,16 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
         try {
             locationManager = (LocationManager) mContext.getSystemService(LOCATION_SERVICE);
 
-            // getting GPS status
             isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-            // getting network status
             isNetworkEnabled = locationManager
                     .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 
             if (!isGPSEnabled && !isNetworkEnabled) {
-                // no network provider is enabled
             } else {
                 this.canGetLocation = true;
-                // First get location from Network Provider
                 if (isNetworkEnabled) {
                     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        // TODO: Consider calling
-                        //    ActivityCompat#requestPermissions
-                        // here to request the missing permissions, and then overriding
-                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                        //                                          int[] grantResults)
-                        // to handle the case where the user grants the permission. See the documentation
-                        // for ActivityCompat#requestPermissions for more details.
                         ActivityCompat.requestPermissions((Activity) mContext,   new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
                     }
                     locationManager.requestLocationUpdates(
@@ -257,7 +253,7 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
     }
     public void stopUsingGPS(){
         if(locationManager != null){
-            locationManager.removeUpdates(AndroidStartServiceOnBoot.this);
+            locationManager.removeUpdates(GPSService.this);
         }
     }
     public double getLatitude(){
@@ -313,16 +309,4 @@ public class AndroidStartServiceOnBoot extends Service implements LocationListen
         // Showing Alert Message
         alertDialog.show();
     }
-//    void sendNotif() {
-//        // 1-я часть
-//        Notification notif = new Notification(R.drawable.ic_launcher_background, "Text in status bar",
-//                System.currentTimeMillis());
-//
-//        // ставим флаг, чтобы уведомление пропало после нажатия
-//        notif.flags |= Notification.FLAG_AUTO_CANCEL;
-//
-//        // отправляем
-//        nm.notify(1, notif);
-//    }
-
 }
