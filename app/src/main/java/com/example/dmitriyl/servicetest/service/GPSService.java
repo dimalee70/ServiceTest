@@ -26,6 +26,7 @@ import android.util.Log;
 import com.example.dmitriyl.servicetest.AndroidStartServiceOnBoot;
 import com.example.dmitriyl.servicetest.MainActivity;
 import com.example.dmitriyl.servicetest.R;
+import com.example.dmitriyl.servicetest.storage.PersistantStorage;
 
 import java.sql.Time;
 import java.util.Timer;
@@ -75,38 +76,38 @@ public class GPSService extends Service implements LocationListener
 
     }
 
-    protected void sendNotification(String Longitude, String Latitude) {
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(mContext.getApplicationContext(), "notify_001");
-        Intent ii = new Intent(mContext.getApplicationContext(), MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, ii, 0);
-
-        NotificationCompat.BigTextStyle bigText = new NotificationCompat.BigTextStyle();
-        bigText.setBigContentTitle("Your location");
-        bigText.setSummaryText("You");
-
-        mBuilder.setContentIntent(pendingIntent);
-        mBuilder.setSmallIcon(R.mipmap.ic_launcher_round);
-        mBuilder.setContentTitle("Your location");
-        mBuilder.setContentText("Longitude " + Longitude+"\nLatitude " + Latitude);
-        mBuilder.setPriority(Notification.PRIORITY_MAX);
-        mBuilder.setStyle(bigText);
-
-        NotificationManager mNotificationManager =
-                (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
-
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("notify_001",
-                    "Channel human readable title",
-                    NotificationManager.IMPORTANCE_DEFAULT);
-            mNotificationManager.createNotificationChannel(channel);
-        }
-
-        mNotificationManager.notify(0, mBuilder.build());
-
-
-    }
+//    protected void sendNotification(String Longitude, String Latitude) {
+//        NotificationCompat.Builder mBuilder =
+//                new NotificationCompat.Builder(mContext.getApplicationContext(), "notify_001");
+//        Intent ii = new Intent(mContext.getApplicationContext(), MainActivity.class);
+//        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, ii, 0);
+//
+//        NotificationCompat.BigTextStyle bigText = new NotificationCompat.BigTextStyle();
+//        bigText.setBigContentTitle("Your location");
+//        bigText.setSummaryText("You");
+//
+//        mBuilder.setContentIntent(pendingIntent);
+//        mBuilder.setSmallIcon(R.mipmap.ic_launcher_round);
+//        mBuilder.setContentTitle("Your location");
+//        mBuilder.setContentText("Longitude " + Longitude+"\nLatitude " + Latitude);
+//        mBuilder.setPriority(Notification.PRIORITY_MAX);
+//        mBuilder.setStyle(bigText);
+//
+//        NotificationManager mNotificationManager =
+//                (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+//
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            NotificationChannel channel = new NotificationChannel("notify_001",
+//                    "Channel human readable title",
+//                    NotificationManager.IMPORTANCE_DEFAULT);
+//            mNotificationManager.createNotificationChannel(channel);
+//        }
+//
+//        mNotificationManager.notify(0, mBuilder.build());
+//
+//
+//    }
 
     @Override
     public void onDestroy() {
@@ -120,6 +121,8 @@ public class GPSService extends Service implements LocationListener
     public void onCreate() {
         super.onCreate();
         this.mContext = getApplicationContext();
+        PersistantStorage.init(mContext);
+//        PersistanceStorage.PersistanceStorage
 
 
         System.out.println("hello");
@@ -136,7 +139,9 @@ public class GPSService extends Service implements LocationListener
         System.out.println("Start Server");
         System.out.print("Longitude ");
         getLocation();
-        sendNotification(Double.toString(longitude),Double.toString(latitude));
+        PersistantStorage.addProperty("longitude",Double.toString(longitude));
+        PersistantStorage.addProperty("latitude",Double.toString(latitude));
+//        sendNotification(Double.toString(longitude),Double.toString(latitude));
         startTimer();
         System.out.println("End Server");
 //

@@ -25,9 +25,6 @@
             android:name=".receivers.RepeatingReceiver"
             android:enabled="true"
             android:exported="true">
-            <intent-filter>
-                <action android:name="com.example.dmitriyl.servicetest.RepeatReceiver"/>
-            </intent-filter>
         </receiver>
         <receiver
             android:name=".receivers.RestartReceiver"

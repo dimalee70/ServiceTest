@@ -11,13 +11,14 @@ import com.example.dmitriyl.servicetest.service.GPSService;
 public class RestartReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-
-        Intent serviceIntent = new Intent(context,GPSService.class);
-        context.startService(serviceIntent);
+//
+//        Intent serviceIntent = new Intent(context,GPSService.class);
+//        context.startService(serviceIntent);
+        System.out.println("restart receiver");
         AlarmManager alarmManager=(AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent myIntent = new Intent(context,BootReceiver.class);
+        Intent myIntent = new Intent(context,RepeatingReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context,0,myIntent,0);
         assert alarmManager != null;
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,System.currentTimeMillis(),100,pendingIntent);
-}
+    }
 }

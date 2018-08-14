@@ -1,5 +1,6 @@
 package com.example.dmitriyl.servicetest;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -14,12 +15,14 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
 import com.example.dmitriyl.servicetest.receivers.BootReceiver;
+import com.example.dmitriyl.servicetest.receivers.RepeatingReceiver;
 import com.example.dmitriyl.servicetest.service.GPSService;
 
 import java.util.List;
@@ -37,8 +40,25 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onDestroy()
+    {
+
+        super.onDestroy();
+        System.out.println("on Destroy");
+//        AlarmManager alarmManager=(AlarmManager) getSystemService(Context.ALARM_SERVICE);
+//        Intent intent = new Intent(this,RepeatingReceiver.class);
+//        PendingIntent pendingIntent = PendingIntent.getBroadcast(this,0,intent,0);
+//        assert alarmManager != null;
+//        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,System.currentTimeMillis(),60000,pendingIntent);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions((Activity) this,   new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+        }
 //        IntentFilter intentFilter = new IntentFilter(
 //                "android.intent.action.BOOT_COMPLETED");
 //        BootReceiver bootReceiver = new BootReceiver();
@@ -50,7 +70,7 @@ public class MainActivity extends Activity {
 //
 //        GPSServiceIntent = new Intent(getCtx(),gpsService.getClass());
         AlarmManager alarmManager=(AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this,BootReceiver.class);
+        Intent intent = new Intent(this,RepeatingReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this,0,intent,0);
         assert alarmManager != null;
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,System.currentTimeMillis(),100,pendingIntent);
