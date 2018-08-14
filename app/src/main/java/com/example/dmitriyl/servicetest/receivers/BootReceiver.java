@@ -6,9 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.example.dmitriyl.servicetest.AndroidStartServiceOnBoot;
-import com.example.dmitriyl.servicetest.service.GPSService;
-
 public class BootReceiver extends BroadcastReceiver
 {
     @Override
