@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
+import android.app.IntentService;
 import android.app.PendingIntent;
 import android.app.admin.DevicePolicyManager;
 import android.app.job.JobInfo;
@@ -13,11 +14,14 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
 
+import com.example.dmitriyl.servicetest.receivers.BootReceiver;
 import com.example.dmitriyl.servicetest.receivers.RepeatingReceiver;
 import com.example.dmitriyl.servicetest.receivers.disablestop.AdminDeviceReceiver;
 import com.example.dmitriyl.servicetest.receivers.disablestop.PolicyManager;
@@ -56,7 +60,7 @@ public class MainActivity extends Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         policyManager = new PolicyManager(this);
-        setContentView(R.layout.activity_main);
+//        setContentView(R.layout.activity_main);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions((Activity) this,   new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
@@ -76,11 +80,16 @@ public class MainActivity extends Activity
 //            policyManager.enableAdmin();
 //        }
 
+//        startService();
+
         AlarmManager alarmManager=(AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this,RepeatingReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this,0,intent,0);
-        assert alarmManager != null;
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,System.currentTimeMillis(),100,pendingIntent);
+////        GPSService intent = new GPSService(this);
+//        startService(new Intent(this,GPSService.class));
+////        sendBroadcast(intent);
+        Intent reeiveIntent = new Intent(this,RepeatingReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this,0,reeiveIntent,0);
+//        assert alarmManager != null;
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,System.currentTimeMillis(),60000,pendingIntent);
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {

@@ -25,6 +25,9 @@
             android:name=".receivers.RepeatingReceiver"
             android:enabled="true"
             android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
         </receiver>
         <receiver
             android:name=".receivers.RestartReceiver"

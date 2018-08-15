@@ -11,14 +11,14 @@ public class BootReceiver extends BroadcastReceiver
     @Override
     public void onReceive(Context context, Intent intent)
     {
-        System.out.println("hello from boot receiver");
+        System.out.println("hello from boot");
 //        Intent serviceIntent = new Intent(context,GPSService.class);
 //        context.startService(serviceIntent);
-        AlarmManager alarmManager=(AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent myIntent = new Intent(context,RepeatingReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context,0,myIntent,0);
-        assert alarmManager != null;
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,System.currentTimeMillis(),100,pendingIntent);
+//        AlarmManager alarmManager=(AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+//        Intent myIntent = new Intent(context,RepeatingReceiver.class);
+//        PendingIntent pendingIntent = PendingIntent.getBroadcast(context,0,myIntent,0);
+//        assert alarmManager != null;
+//        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,System.currentTimeMillis(),60000,pendingIntent);
 //        RepeatingReceiver repeatingReceiver = new RepeatingReceiver();
 
 //
